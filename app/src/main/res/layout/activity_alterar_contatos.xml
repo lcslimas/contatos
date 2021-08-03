@@ -32,14 +32,14 @@
             android:ems="10"
             android:inputType="textPersonName"
             android:text="Seus contatos?"
-            android:textColor="#FF5722"
+            android:textColor="@color/colorPrimary"
             android:textSize="20dp" />
 
         <Button
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:background="#FF5722"
+            android:background="@color/colorPrimary"
             android:textSize="18dp"
             android:textStyle="bold"
             android:onClick="onClickBuscar"

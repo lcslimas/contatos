@@ -9,24 +9,21 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Layout;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.fivecontacts.R;
@@ -36,9 +33,7 @@ import com.example.fivecontacts.main.utils.UIEducacionalPermissao;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -149,17 +144,29 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
+                    Log.v ("SMD","CLicou1");
 
                     if (checarPermissaoPhone_SMD(contatos.get(i).getNumero())) {
 
                         Uri uri = Uri.parse(contatos.get(i).getNumero());
-                         //  Intent itLigar = new Intent(Intent.ACTION_DIAL, uri);
-                            Intent itLigar = new Intent(Intent.ACTION_CALL, uri);
+                        Intent itLigar = new Intent(Intent.ACTION_CALL, uri);
                         startActivity(itLigar);
                     }
 
 
                 }
+            });
+
+            //Aplicado clique longo para excluir contato
+            lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    // Abrir modal para confirma exclusão
+                    onLongPressed(position);
+                    return true;
+                }
+
             });
 
         }
@@ -189,11 +196,28 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    Log.v ("SMD","CLicou1");
 
                     if (checarPermissaoPhone_SMD(contatos.get(i).getNumero())) {
 
                         Uri uri = Uri.parse(contatos.get(i).getNumero());
-                      //   Intent itLigar = new Intent(Intent.ACTION_DIAL, uri);
+                        Intent itLigar = new Intent(Intent.ACTION_CALL, uri);
+                        startActivity(itLigar);
+                    }
+
+
+                }
+            });
+
+            lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+                    if (checarPermissaoPhone_SMD(contatos.get(i).getNumero())) {
+
+                        Uri uri = Uri.parse(contatos.get(i).getNumero());
+                        //   Intent itLigar = new Intent(Intent.ACTION_DIAL, uri);
                         Intent itLigar = new Intent(Intent.ACTION_CALL, uri);
                         startActivity(itLigar);
                     }
@@ -218,8 +242,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
             if ( shouldShowRequestPermissionRationale(Manifest.permission.CALL_PHONE)){
 
-                Log.v ("SMD","Primeira Vez");
-
 
                 String mensagem = "Nossa aplicação precisa acessar o telefone para discagem automática. Uma janela de permissão será solicitada";
                 String titulo = "Permissão de acesso a chamadas";
@@ -237,7 +259,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
                 UIEducacionalPermissao mensagemPermissao = new UIEducacionalPermissao(mensagem,titulo, codigo);
                 mensagemPermissao.onAttach ((Context)this);
                 mensagemPermissao.show(getSupportFragmentManager(), "segundavez2");
-                Log.v ("SMD","Outra Vez");
 
             }
       }
@@ -251,16 +272,19 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
         switch (requestCode) {
             case 2222:
                if(grantResults[0]==PackageManager.PERMISSION_GRANTED){
-                   Toast.makeText(this, "VALEU", Toast.LENGTH_LONG).show();
+                   Toast.makeText(this, "Acesso concedido", Toast.LENGTH_LONG).show();
                    Uri uri = Uri.parse(numeroCall);
-                   //   Intent itLigar = new Intent(Intent.ACTION_DIAL, uri);
                    Intent itLigar = new Intent(Intent.ACTION_CALL, uri);
                    startActivity(itLigar);
 
                }else{
-                   Toast.makeText(this, "SEU FELA!", Toast.LENGTH_LONG).show();
+                   // Modificando mensagem e aplicando lógica de discagem para caso não concedido acesso para ligar direto
+                   Toast.makeText(this, "Aplicativo sem permissão para fazer chamadas, redirecionando para discagem!", Toast.LENGTH_LONG).show();
 
-                   String mensagem= "Seu aplicativo pode ligar diretamente, mas sem permissão não funciona. Se você marcou não perguntar mais, você deve ir na tela de configurações para mudar a instalação ou reinstalar o aplicativo  ";
+                   Uri uri = Uri.parse(numeroCall);
+                   Intent itLigar = new Intent(Intent.ACTION_DIAL, uri);
+                   startActivity(itLigar);
+                   String mensagem= "Seu aplicativo pode ligar diretamente, mas sem permissão será redirecionado para tela de discagem. Se você marcou não perguntar mais, você deve ir na tela de configurações para mudar a instalação ou reinstalar o aplicativo  ";
                    String titulo= "Porque precisamos telefonar?";
                    UIEducacionalPermissao mensagemPermisso = new UIEducacionalPermissao(mensagem,titulo,2);
                    mensagemPermisso.onAttach((Context)this);
@@ -337,6 +361,43 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
         }
 
 
+    }
+
+    public void onLongPressed(final int index) {
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Excluindo Contato")
+                .setMessage("Tem certeza que deseja excluir contato?")
+                .setPositiveButton("Sim", new DialogInterface.OnClickListener()
+                {
+                    //Se aceita exclusão, deleta contato e atualiza estado
+                    public void onClick(DialogInterface dialog, int which) {
+                        deletarContato(index);
+                        atualizarListaDeContatos(user);
+                        preencherListView(user);
+                        preencherListViewImagens(user);
+                    }
+
+                })
+                .setNegativeButton("Não", null)
+                .show();
+    }
+
+    public void deletarContato (int index){
+        // Pega contatos existente e exclui pelo index
+        SharedPreferences deletaContatos =
+                getSharedPreferences("contatos",Activity.MODE_PRIVATE);
+
+        Log.v ("SMD", String.valueOf(index));
+        int num = deletaContatos.getInt("numContatos", 0);
+        SharedPreferences.Editor editor = deletaContatos.edit();
+        try {
+            editor.remove("contato"+index);
+            editor.putInt("numContatos",num-1);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        editor.commit();
     }
 
 
