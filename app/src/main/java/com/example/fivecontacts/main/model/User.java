@@ -22,8 +22,6 @@ public class User implements Serializable {
         this.tema_escuro = tema_escuro;
     }
 
-
-
     public User(String nome, String login, String password, String email, boolean manterLogado) {
         this.nome = nome;
         this.login=login;

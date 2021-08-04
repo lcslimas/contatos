@@ -73,7 +73,7 @@ public class AlterarContatos_Activity extends AppCompatActivity implements Botto
         });
     }
 
-    public void salvarContato (Contato w){
+    public void salvarContato(Contato w){
         SharedPreferences salvaContatos =
                 getSharedPreferences("contatos",Activity.MODE_PRIVATE);
 

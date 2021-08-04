@@ -33,7 +33,9 @@ import com.example.fivecontacts.main.utils.UIEducacionalPermissao;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,14 +80,16 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
     }
 
+    //Função que pega os contatos atuais gravados no shared Preferences, caso o usuário mude a lista em runtime
     protected void atualizarListaDeContatos(User user){
         SharedPreferences recuperarContatos = getSharedPreferences("contatos", Activity.MODE_PRIVATE);
 
+        // Quantidade de contatos gravados e é utilizado no foreach para armazenar criar listagem de contato
         int num = recuperarContatos.getInt("numContatos", 0);
+
         ArrayList<Contato> contatos = new ArrayList<Contato>();
 
         Contato contato;
-
 
         for (int i = 1; i <= num; i++) {
             String objSel = recuperarContatos.getString("contato" + i, "");
@@ -108,13 +112,16 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
 
         }
-        Log.v("PDM3","contatos:"+contatos.size());
+        // Atribui os contatos ao usuário
         user.setContatos(contatos);
     }
+
+    // Função para criar Listagem de contatos com imagens e afins
     protected  void preencherListViewImagens(User user){
 
         final ArrayList<Contato> contatos = user.getContatos();
         Collections.sort(contatos);
+        //Verificação para evitar NPE que poderia ser causado na linha 129, 130, 134, 152 e 154
         if (contatos != null) {
             String[] contatosNomes, contatosAbrevs;
             contatosNomes = new String[contatos.size()];
@@ -144,8 +151,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-                    Log.v ("SMD","CLicou1");
-
                     if (checarPermissaoPhone_SMD(contatos.get(i).getNumero())) {
 
                         Uri uri = Uri.parse(contatos.get(i).getNumero());
@@ -162,7 +167,7 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                    // Abrir modal para confirma exclusão
+                    // Abrir modal para confirmar exclusão
                     onLongPressed(position);
                     return true;
                 }
@@ -196,7 +201,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
 
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    Log.v ("SMD","CLicou1");
 
                     if (checarPermissaoPhone_SMD(contatos.get(i).getNumero())) {
 
@@ -359,8 +363,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
           requestPermissions(permissions, 2222);
 
         }
-
-
     }
 
     public void onLongPressed(final int index) {
@@ -377,7 +379,6 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
                         preencherListView(user);
                         preencherListViewImagens(user);
                     }
-
                 })
                 .setNegativeButton("Não", null)
                 .show();
@@ -388,16 +389,44 @@ public class ListaDeContatos_Activity extends AppCompatActivity implements UIEdu
         SharedPreferences deletaContatos =
                 getSharedPreferences("contatos",Activity.MODE_PRIVATE);
 
-        Log.v ("SMD", String.valueOf(index));
         int num = deletaContatos.getInt("numContatos", 0);
+        final ArrayList<Contato> contatos = user.getContatos();
+
         SharedPreferences.Editor editor = deletaContatos.edit();
         try {
-            editor.remove("contato"+index);
-            editor.putInt("numContatos",num-1);
+            contatos.remove(index);
+            editor.clear();
+            editor.commit();
+            int count = user.getContatos().size();
+            for (int i = 0; i< count; i++) {
+                salvarContato(contatos.get(i));
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        user.setContatos(contatos);
+    }
+
+    public void salvarContato(Contato w){
+        SharedPreferences salvaContatos =
+                getSharedPreferences("contatos",Activity.MODE_PRIVATE);
+
+        int num = salvaContatos.getInt("numContatos", 0); //checando quantos contatos já tem
+        SharedPreferences.Editor editor = salvaContatos.edit();
+        try {
+            ByteArrayOutputStream dt = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(dt);
+            dt = new ByteArrayOutputStream();
+            oos = new ObjectOutputStream(dt);
+            oos.writeObject(w);
+            String contatoSerializado= dt.toString(StandardCharsets.ISO_8859_1.name());
+            editor.putString("contato"+(num+1), contatoSerializado);
+            editor.putInt("numContatos",num+1);
         }catch(Exception e){
             e.printStackTrace();
         }
         editor.commit();
+        user.getContatos().add(w);
     }
 
 
